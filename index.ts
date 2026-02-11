@@ -6,6 +6,7 @@ import connectDB from "./config/db.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import mosqueRoutes from "./routes/mosqueRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
 
 
 const app = express();
@@ -22,6 +23,7 @@ app.use((req, res, next) => {
 app.use("/api/events", eventRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/mosques", mosqueRoutes);
+app.use("/api/bookings", bookingRoutes);
 app.get("/health", (req, res) => {
   res.send("Server is up and running!");
 });

@@ -4,7 +4,101 @@ import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 1. CREATE an Event (Mosque Admin & Super Admin only)
+// --- 1. SEARCH & FILTERS (Place this BEFORE any /:id routes) ---
+router.get("/search", async (req, res) => {
+  try {
+    const { keyword, location, category, startDate, endDate, upcoming, mosque } = req.query;
+
+    let query: any = {};
+
+    // Text Search
+    if (keyword) {
+      query.$or = [
+        { title: { $regex: String(keyword), $options: "i" } },
+        { description: { $regex: String(keyword), $options: "i" } },
+      ];
+    }
+
+    // Location Filter
+    if (location) {
+      query.location = { $regex: String(location), $options: "i" };
+    }
+
+    // Category Filter
+    if (category) {
+      query.eventType = category; // Note: using eventType as per your model
+    }
+
+    // Specific Mosque Filter
+    if (mosque) {
+      query.mosque = mosque;
+    }
+
+    // Date Filters
+    if (upcoming === "true") {
+      query.date = { $gte: new Date() };
+    } else if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate as string);
+      if (endDate) query.date.$lte = new Date(endDate as string);
+    }
+
+    const events = await Event.find(query)
+      .populate("organiser", "username")
+      .populate("mosque", "name address location")
+      .sort({ date: 1 });
+
+    res.status(200).json({
+      count: events.length,
+      events,
+    });
+  } catch (error) {
+    console.error("Search Error:", error);
+    res.status(500).json({ message: "Error searching for events" });
+  }
+});
+
+// --- 2. GET ALL (Standard list with pagination) ---
+router.get("/", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+    const skip = (page - 1) * limit;
+
+    const totalEvents = await Event.countDocuments();
+    const events = await Event.find()
+      .populate("organiser", "username email")
+      .populate("mosque", "name address location")
+      .sort({ date: 1 })
+      .limit(limit)
+      .skip(skip);
+
+    res.status(200).json({
+      currentPage: page,
+      totalPages: Math.ceil(totalEvents / limit),
+      totalEvents,
+      events,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching events" });
+  }
+});
+
+// --- 3. GET SINGLE EVENT ---
+router.get("/:id", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id)
+      .populate("mosque", "name location")
+      .populate("organiser", "username");
+    
+    if (!event) return res.status(404).json({ message: "Event not found" });
+    res.status(200).json(event);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching event" });
+  }
+});
+
+// 4. CREATE an Event (Mosque Admin & Super Admin only)
 router.post(
   "/",
   protect,
@@ -78,47 +172,47 @@ router.post(
   },
 );
 
-// 2. GET ALL Events (Public with Mosque Population)
-router.get("/", async (req, res) => {
-  try {
-    const query: any = {};
+// // 5. GET ALL Events (Public with Mosque Population)
+// router.get("/", async (req, res) => {
+//   try {
+//     const query: any = {};
 
-    if (req.query.keyword) {
-      query.title = { $regex: String(req.query.keyword).trim(), $options: "i" };
-    }
+//     if (req.query.keyword) {
+//       query.title = { $regex: String(req.query.keyword).trim(), $options: "i" };
+//     }
 
-    if (req.query.upcoming === "true") {
-      query.date = { $gte: new Date() };
-    }
+//     if (req.query.upcoming === "true") {
+//       query.date = { $gte: new Date() };
+//     }
 
-    if (req.query.mosque) {
-      query.mosque = req.query.mosque;
-    }
+//     if (req.query.mosque) {
+//       query.mosque = req.query.mosque;
+//     }
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
-    const skip = (page - 1) * limit;
+//     const page = parseInt(req.query.page as string) || 1;
+//     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+//     const skip = (page - 1) * limit;
 
-    const totalEvents = await Event.countDocuments(query);
-    const events = await Event.find(query)
-      .populate("organiser", "username email")
-      .populate("mosque", "name address location")
-      .sort({ date: 1 })
-      .limit(limit)
-      .skip(skip);
+//     const totalEvents = await Event.countDocuments(query);
+//     const events = await Event.find(query)
+//       .populate("organiser", "username email")
+//       .populate("mosque", "name address location")
+//       .sort({ date: 1 })
+//       .limit(limit)
+//       .skip(skip);
 
-    res.status(200).json({
-      currentPage: page,
-      totalPages: Math.ceil(totalEvents / limit),
-      totalEvents,
-      events,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching events" });
-  }
-});
+//     res.status(200).json({
+//       currentPage: page,
+//       totalPages: Math.ceil(totalEvents / limit),
+//       totalEvents,
+//       events,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Error fetching events" });
+//   }
+// });
 
-// 3. UPDATE an event (Owner or Super Admin)
+// 6. UPDATE an event (Owner or Super Admin)
 router.put(
   "/:id",
   protect,
@@ -157,7 +251,7 @@ router.put(
   },
 );
 
-// 4. DELETE an event (Owner or Super Admin)
+// 7. DELETE an event (Owner or Super Admin)
 router.delete(
   "/:id",
   protect,
