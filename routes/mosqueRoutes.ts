@@ -1,5 +1,5 @@
 import express from "express";
-import Mosque from "../models/Mosque";
+import Mosque from "../models/Mosque.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
