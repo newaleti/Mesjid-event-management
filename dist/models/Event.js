@@ -37,6 +37,12 @@ const eventSchema = new mongoose.Schema({
         ref: "Mosque",
         required: true,
     },
+    // Access Type to differentiate between open events and those restricted to mosque members or students
+    accessType: {
+        type: String,
+        enum: ["open", "restricted"],
+        default: "open",
+    },
 }, { timestamps: true });
 // Prevent duplicate events in same mosque by title + date
 eventSchema.index({ mosque: 1, title: 1, date: 1 }, { unique: true });

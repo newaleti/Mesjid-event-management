@@ -7,9 +7,9 @@ import { protect, authorize } from "../middleware/authMiddleware.js";
 const router = express.Router();
 // User registration route
 router.post("/register", async (req, res) => {
-    const { firstName, lastName, username, email, password } = req.body;
+    const { firstName, lastName, username, email, password, phoneNumber, gender, age } = req.body;
     // Basic validation
-    if (!firstName || !lastName || !username || !email || !password) {
+    if (!firstName || !lastName || !username || !email || !password || !phoneNumber || !gender || !age) {
         return res.status(400).json({ message: "All fields are required" });
     }
     const normalizedEmail = email.trim().toLowerCase();
@@ -32,6 +32,9 @@ router.post("/register", async (req, res) => {
             username,
             email,
             password: hashedPassword,
+            phoneNumber,
+            gender,
+            age,
         });
         // Save user
         await newUser.save();

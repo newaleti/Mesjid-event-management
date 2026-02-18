@@ -55,13 +55,19 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Mosque",
       default: null,
-    }, // Helpful for Mosque Admins
+    }, // Mosque Admins only
+    
     // For event attendance tracking, we can add a field to track if the user is an official member or a student (if needed for special access)
-    membershipStatus: {
-      type: String,
-      enum: ["none", "official_member", "student"],
-      default: "none",
-    },
+    mosqueMemberships: [
+      {
+        mosque: { type: mongoose.Schema.Types.ObjectId, ref: "Mosque" },
+        status: {
+          type: String,
+          enum: ["none", "student", "official_member"],
+          default: "none",
+        },
+      },
+    ],
   },
   { timestamps: true },
 ); // This automatically adds 'createdAt' and 'updatedAt' fields!

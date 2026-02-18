@@ -1,29 +1,41 @@
 import jwt from "jsonwebtoken";
-export const protect = (req, res, next) => {
-    console.log("Authorization Header:", req.headers.authorization);
+import User from "../models/User.js";
+export const protect = async (req, res, next) => {
+    console.log("Authorization Header Check...");
     let token;
-    // Check for token in headers
+    // 1. Check for token in headers
     if (req.headers.authorization &&
         req.headers.authorization.startsWith("Bearer")) {
         try {
-            // Get token from header
+            // 2. Extract token
             token = req.headers.authorization.split(" ")[1];
             const secret = process.env.JWT_SECRET;
             if (!secret) {
                 res.status(500).json({ message: "JWT secret is not configured" });
                 return;
             }
-            // Verify token
+            // 3. Verify token
             const decoded = jwt.verify(token, secret);
-            // Attach user info to request object
+            // 4. Fetch latest user data from Database
+            // We do this so membershipStatus is always up-to-date
+            const user = await User.findById(decoded.id).select("-password");
+            if (!user) {
+                res
+                    .status(401)
+                    .json({ message: "Not authorized, user no longer exists" });
+                return;
+            }
+            // 5. Attach fresh user info to request object
             req.user = {
-                id: decoded.id,
-                role: decoded.role,
-                assignedMosque: decoded.assignedMosque,
+                id: user._id.toString(),
+                role: user.role,
+                assignedMosque: user.assignedMosque?.toString(),
+                membershipStatus: user.membershipStatus,
             };
             next();
         }
         catch (error) {
+            console.error("Auth Middleware Error:", error);
             res.status(401).json({ message: "Not authorized, token failed" });
         }
     }

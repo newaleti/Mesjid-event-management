@@ -41,7 +41,7 @@ router.get(
   async (req, res) => {
     const requests = await MembershipRequest.find({
       mosque: req.user?.assignedMosque,
-    }).populate("user", "firstName lastName email phoneNumber");
+    }).populate("user", "firstName lastName email phoneNumber gender age").sort("-createdAt");
     res.json(requests);
   },
 );
@@ -61,9 +61,18 @@ router.put(
     await request.save();
 
     if (status === "approved") {
-      // Upgrade the user status to student/member
-      await User.findByIdAndUpdate(request.user, {
-        membershipStatus: "student",
+      await User.findOneAndUpdate(
+        { _id: request.user, "mosqueMemberships.mosque": request.mosque },
+        { $set: { "mosqueMemberships.$.status": "student" } },
+      ).then(async (user) => {
+        // If user didn't already have a membership entry for this mosque, push it
+        if (!user) {
+          await User.findByIdAndUpdate(request.user, {
+            $push: {
+              mosqueMemberships: { mosque: request.mosque, status: "student" },
+            },
+          });
+        }
       });
     }
 

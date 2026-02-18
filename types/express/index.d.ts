@@ -7,6 +7,10 @@ declare module "express-serve-static-core" {
       role?: string;
       assignedMosque?: string;
       membershipStatus?: string;
+      mosqueMemberships?: Array<{
+        mosque: string;
+        status: string;
+      }>;
     };
   }
 }

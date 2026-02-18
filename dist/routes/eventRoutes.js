@@ -95,11 +95,11 @@ router.post("/", protect, authorize("mosque_admin", "super_admin"), async (req, 
         if (!req.user) {
             return res.status(401).json({ message: "Not authorized" });
         }
-        const { title, description, date, mosque, eventType, capacity, image, location, } = req.body;
+        const { title, description, date, mosque, eventType, capacity, image, location, accessType, } = req.body;
         // Basic validation
-        if (!title || !description || !date || !mosque || !image || !location) {
+        if (!title || !description || !date || !mosque || !image || !location || !accessType) {
             return res.status(400).json({
-                message: "Required fields: title, description, date, mosque, image, location",
+                message: "Required fields: title, description, date, mosque, image, location, accessType",
             });
         }
         // ROLE CHECK: Mosque admins can only post to their assigned mosque
@@ -132,6 +132,7 @@ router.post("/", protect, authorize("mosque_admin", "super_admin"), async (req, 
             capacity: capacity || 0,
             image: image.trim(),
             organiser: req.user.id,
+            accessType,
         });
         const savedEvent = await newEvent.save();
         res.status(201).json(savedEvent);
