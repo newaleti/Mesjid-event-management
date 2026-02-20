@@ -356,4 +356,21 @@ router.patch(
   },
 );
 
+// Get all students registered for a specific event (For Teachers)
+router.get("/event-students/:eventId", protect, authorize("teacher", "mosque_admin"), async (req, res) => {
+  try {
+    // 1. Find all bookings for this event
+    const bookings = await Booking.find({ event: req.params.eventId })
+      .populate("user", "firstName lastName email") // Pull student names from User model
+      .select("user"); // We only need the user info
+
+    // 2. Extract the user objects into a clean list
+    const studentList = bookings.map(b => b.user);
+
+    res.status(200).json(studentList);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching student list" });
+  }
+});
+
 export default router;

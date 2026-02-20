@@ -8,6 +8,8 @@ import authRoutes from "./routes/authRoutes.js";
 import mosqueRoutes from "./routes/mosqueRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import membershipRoutes from "./routes/membershipRoutes.js";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
+import marklistRoutes from "./routes/marklistRoutes.js";
 
 
 const app = express();
@@ -26,6 +28,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/mosques", mosqueRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/membership", membershipRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/marklist", marklistRoutes);
 
 app.get("/health", (req, res) => {
   res.send("Server is up and running!");
