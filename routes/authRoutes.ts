@@ -47,6 +47,19 @@ router.post("/register", async (req, res) => {
       $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
     });
     if (existingUser) {
+      const emailTaken = existingUser.email?.toLowerCase() === normalizedEmail;
+      const usernameTaken = existingUser.username === normalizedUsername;
+      if (emailTaken && usernameTaken) {
+        return res
+          .status(400)
+          .json({ message: "Email and username already exist" });
+      }
+      if (emailTaken) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      if (usernameTaken) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
       return res.status(400).json({ message: "User already exists" });
     }
 
@@ -140,6 +153,42 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// Get teachers (Mosque Admin or Super Admin)
+router.get(
+  "/teachers",
+  protect,
+  authorize("mosque_admin", "super_admin"),
+  async (req, res) => {
+    try {
+      const search = typeof req.query.q === "string" ? req.query.q.trim() : "";
+      const query: Record<string, any> = { role: "teacher" };
+
+      if (req.user?.role === "mosque_admin" && req.user.assignedMosque) {
+        query.assignedMosque = req.user.assignedMosque;
+      }
+
+      if (search) {
+        const regex = new RegExp(search, "i");
+        query.$or = [
+          { firstName: regex },
+          { lastName: regex },
+          { username: regex },
+          { email: regex },
+        ];
+      }
+
+      const teachers = await User.find(query)
+        .select("firstName lastName username email assignedMosque")
+        .sort({ firstName: 1, lastName: 1 });
+
+      res.status(200).json(teachers);
+    } catch (error) {
+      console.error("Get Teachers Error:", error);
+      res.status(500).json({ message: "Error fetching teachers" });
+    }
+  },
+);
 
 // Assign a Mosque Admin (Super Admin only)
 router.patch(
