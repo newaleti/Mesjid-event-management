@@ -142,6 +142,7 @@ router.post("/login", async (req, res) => {
         username: user.username,
         role: user.role,
         assignedMosque: user.assignedMosque,
+        mosqueMemberships: user.mosqueMemberships,
       },
     });
   } catch (error) {
