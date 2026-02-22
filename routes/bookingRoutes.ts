@@ -146,11 +146,9 @@ router.get(
       // 2. Security: If Mosque Admin, ensure they own the mosque this event belongs to
       if (req.user?.role === "mosque_admin") {
         if (event.mosque.toString() !== req.user?.assignedMosque?.toString()) {
-          return res
-            .status(403)
-            .json({
-              message: "Not authorized to view attendees for this mosque.",
-            });
+          return res.status(403).json({
+            message: "Not authorized to view attendees for this mosque.",
+          });
         }
       }
 
@@ -159,7 +157,10 @@ router.get(
         event: eventId,
         status: "confirmed",
       })
-        .populate("user", "username email")
+        .populate(
+          "user",
+          "username email phoneNumber gender age firstName lastName",
+        )
         .select("user bookingDate"); // Only return user info and when they booked
 
       res.status(200).json({
