@@ -55,6 +55,7 @@ router.get("/search", async (req, res) => {
 
     const events = await Event.find(query)
       .populate("organiser", "username")
+      .populate("teacher", "firstName lastName username email")
       .populate("mosque", "name address location")
       .sort({ date: 1 });
 
@@ -78,6 +79,7 @@ router.get("/", async (req, res) => {
     const totalEvents = await Event.countDocuments();
     const events = await Event.find()
       .populate("organiser", "username email")
+      .populate("teacher", "firstName lastName username email")
       .populate("mosque", "name address location")
       .sort({ date: 1 })
       .limit(limit)
@@ -99,6 +101,7 @@ router.get("/:id", async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
       .populate("mosque", "name location")
+      .populate("teacher", "firstName lastName username email")
       .populate("organiser", "username");
 
     if (!event) return res.status(404).json({ message: "Event not found" });
